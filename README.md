@@ -1,6 +1,6 @@
 # Test technique n8n — Lead intake workflow
 
-Ce dépôt contient un workflow n8n exécuté en local via Docker. Le workflow simule la réception d’un lead immobilier via un webhook, valide les données essentielles, enrichit les informations, applique une condition métier sur la priorité, puis envoie un email final avec le sujet **Hello there !** [1]
+Ce dépôt contient un workflow n8n exécuté en local via Docker. Le workflow simule la réception d’un lead immobilier via un webhook, valide les données essentielles, enrichit les informations, applique une condition métier sur la priorité, puis envoie un email final avec le sujet **Hello there !**
 
 ## Objectif
 
@@ -13,7 +13,7 @@ L’objectif est de démontrer un workflow simple, clair et exécutable localeme
 - condition métier sur la priorité ;
 - envoi d’un email final ;
 - export possible du workflow au format JSON ;
-- exécution locale via Docker. [1]
+- exécution locale via Docker.
 
 ## Stack
 
@@ -31,7 +31,7 @@ Le workflow suit la structure suivante :
 3. **Enrichissement** : ajout de `leadId`, `receivedAt`, `priority`, `summary`.
 4. **Condition métier** : distinction entre lead prioritaire et lead standard.
 5. **Préparation du message** : ajout du statut et construction du corps de mail.
-6. **Envoi d’email** : envoi d’un message avec le sujet `Hello there !`. [1]
+6. **Envoi d’email** : envoi d’un message avec le sujet `Hello there !`.
 
 ## Lancer le projet
 
@@ -54,7 +54,7 @@ Une fois le conteneur démarré, l’interface n8n est accessible à l’adresse
 http://localhost:5678
 ```
 
-Le test technique attend un webhook local de type `http://localhost:5678/webhook/lead-intake`. [1]
+Le test technique attend un webhook local de type `http://localhost:5678/webhook-test/lead-intake`.
 
 ## Test du workflow
 
@@ -78,7 +78,7 @@ curl -X POST http://localhost:5678/webhook/lead-intake \
   }'
 ```
 
-Cet exemple reprend le format demandé dans l’énoncé. [1]
+Cet exemple reprend le format demandé dans l’énoncé.
 
 ## Données traitées
 
@@ -92,7 +92,7 @@ Les champs principaux du lead sont les suivants :
 - `source`
 - `projectType`
 - `city`
-- `budget` [1]
+- `budget`
 
 ### Champs obligatoires
 
@@ -101,7 +101,7 @@ Les validations portent sur :
 - `firstName`
 - `email`
 - `projectType`
-- `city` [1]
+- `city`
 
 ### Données enrichies
 
@@ -110,19 +110,19 @@ Le workflow ajoute les informations suivantes :
 - `leadId`
 - `receivedAt`
 - `priority`
-- `summary` [1]
+- `summary`
 
 ## Logique métier
 
 La priorité est calculée avec une règle simple :
 
-- si `projectType = seller` → priorité `high`
-- sinon → priorité `normal` [1]
+- si `budget > 450000` → priorité `high`
+- sinon → priorité `normal`
 
 Ensuite, une condition métier permet de produire l’un des deux statuts suivants :
 
 - `Lead prioritaire détecté`
-- `Lead standard détecté` [1]
+- `Lead standard détecté`
 
 ## Email final
 
@@ -132,47 +132,10 @@ Le workflow envoie un email contenant :
 - un résumé des informations du lead
 - le statut calculé
 - la date de réception
-- l’identifiant du lead [1]
+- l’identifiant du lead
 
-L’envoi réel de l’email fait partie des contraintes du test. [1]
+L’envoi réel de l’email fait partie des contraintes du test.
 
 ## Credentials
 
-Aucun credential sensible ne doit être commité dans ce dépôt ni exposé dans le JSON exporté du workflow. Le sujet précise explicitement que les credentials ne doivent pas être écrits en dur dans le workflow exporté. [1]
-
-## Fichiers attendus dans le dépôt
-
-Exemple de structure recommandée :
-
-```text
-.
-├── README.md
-├── docker-compose.yml
-└── workflow/
-    └── lead-intake-workflow.json
-```
-
-## Démonstration en entretien
-
-Pendant l’entretien, la présentation peut suivre ce plan :
-
-1. lancement de n8n en local ;
-2. explication du webhook ;
-3. test du workflow ;
-4. validation des données ;
-5. enrichissement ;
-6. calcul de la priorité ;
-7. configuration de l’email ;
-8. gestion des erreurs ;
-9. pistes d’amélioration en production. [1]
-
-## Améliorations possibles
-
-Si ce workflow devait être utilisé en production, plusieurs améliorations seraient pertinentes :
-
-- validation plus robuste du schéma d’entrée ;
-- meilleure gestion des erreurs et des retries ;
-- journalisation plus détaillée ;
-- gestion sécurisée des secrets ;
-- persistance des leads dans une base de données ;
-- monitoring et alerting. [1]
+Aucun credential sensible ne doit être commité dans ce dépôt ni exposé dans le JSON exporté du workflow. Le sujet précise explicitement que les credentials ne doivent pas être écrits en dur dans le workflow exporté.
