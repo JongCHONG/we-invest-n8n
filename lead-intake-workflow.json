@@ -5,45 +5,87 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "lead-intake",
+        "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -512,
+        -96
       ],
-      "id": "1384529b-ac7e-4d6b-a75c-3ba3ada570ff",
+      "id": "7cd6cfd8-0a9f-45cf-b561-030ec48daed4",
       "name": "Webhook",
       "webhookId": "f6fe83a9-1264-420d-af11-24d3e4daa000"
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const data = $json.body ?? $json;\n\nconst required = ['firstName', 'email', 'projectType', 'city'];\nconst missing = required.filter((field) => !data[field] || String(data[field]).trim() === '');\n\nif (missing.length) {\n  throw new Error(`Champs obligatoires manquants: ${missing.join(', ')}`);\n}\n\nreturn {\n  json: data,\n};"
+        "fromEmail": "sender@gmail.com",
+        "toEmail": "reciever@gmail.com",
+        "subject": "Hello there !",
+        "html": "={{$json.emailBody}}",
+        "options": {}
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
       "position": [
-        208,
+        736,
+        -288
+      ],
+      "id": "4eb51dc3-e408-4abb-a4cf-76f3949bd029",
+      "name": "Send an Email",
+      "webhookId": "27c65628-8bf7-4065-a989-f60e5e8e2740",
+      "credentials": {
+        "smtp": {
+          "id": "49oyznLmOsPN0o59",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\nJSON.stringify({\n  success: false,\n  message: \"Missing fields required\",\n  missingFields: $json.missingFields\n})\n}}\n",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        96,
         0
       ],
-      "id": "1a805506-db8a-4033-844c-1ceaeeff3895",
-      "name": "Code in JavaScript"
+      "id": "6be0399f-c41e-4fd1-b028-028de3143166",
+      "name": "Response Missing Fields"
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const data = $json;\n\nconst leadId = `lead-${Date.now()}`;\nconst receivedAt = new Date().toISOString();\nconst priority = data.projectType === 'seller' ? 'high' : 'normal';\n\nconst summary = `${data.firstName} ${data.lastName || ''}`.trim()\n  + ` est un lead ${data.projectType} à ${data.city}`\n  + (data.budget ? ` avec un budget de ${data.budget}` : '');\n\nreturn {\n  json: {\n    ...data,\n    leadId,\n    receivedAt,\n    priority,\n    summary,\n  },\n};"
+        "jsCode": "const data = $json.body ?? $json;\n\nconst required = ['firstName', 'email', 'projectType', 'city'];\nconst missing = required.filter((field) => !data[field] || String(data[field]).trim() === '');\n\nreturn {\n  json: {\n    ...data,\n    isValid: missing.length === 0,\n    missingFields: missing,\n    errorMessage: missing.length ? `Missing fields required: ${missing.join(', ')}` : null,\n  },\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
-        0
+        -320,
+        -96
       ],
-      "id": "290dc1e3-8eb9-4602-b240-b5c2b88ea43e",
-      "name": "Code in JavaScript1"
+      "id": "44eb2cde-750e-4008-ad2d-b293c7625d13",
+      "name": "Data Validation"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json;\n\nconst leadId = `lead-${Date.now()}`;\nconst receivedAt = new Date().toISOString();\nconst priority = data.budget > 450000 ? 'high' : 'normal';\n\nconst summary = `${data.firstName} ${data.lastName || ''}`.trim()\n  + ` est un lead ${data.projectType} à ${data.city}`\n  + (data.budget ? ` avec un budget de ${data.budget}` : '');\n\nreturn {\n  json: {\n    ...data,\n    leadId,\n    receivedAt,\n    priority,\n    summary,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -288
+      ],
+      "id": "fef18a9f-a407-4b96-8405-a16b6e11e52f",
+      "name": "Data Enrichement"
     },
     {
       "parameters": {
@@ -73,11 +115,45 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        624,
-        0
+        304,
+        -288
       ],
-      "id": "2176acf7-2177-4958-b88d-8a2068e5f888",
-      "name": "If"
+      "id": "e3486ac5-f41a-42d8-b57c-1bf883aa9c59",
+      "name": "if priority = high/normal"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "72ecd309-a939-4253-96ae-81fc6b52ee13",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": "=true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        -96
+      ],
+      "id": "8c6a670a-5072-4f26-9d37-667b4057788e",
+      "name": "if isValid = true/false"
     },
     {
       "parameters": {
@@ -102,11 +178,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        832,
-        -96
+        512,
+        -384
       ],
-      "id": "1db992ee-5c77-4d7a-96e1-a95c61511e40",
-      "name": "Edit Fields"
+      "id": "97e11025-2824-47e9-be97-db1cbae80a03",
+      "name": "Priority = high"
     },
     {
       "parameters": {
@@ -131,35 +207,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        832,
-        96
+        512,
+        -192
       ],
-      "id": "0c521763-1721-4440-ad94-69dc7c9fa510",
-      "name": "Edit Fields1"
-    },
-    {
-      "parameters": {
-        "fromEmail": "yonhoa27@gmail.com",
-        "toEmail": "jochong27@gmail.com",
-        "subject": "Hello there !",
-        "html": "={{$json.emailBody}}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [
-        1056,
-        -32
-      ],
-      "id": "3b6afa79-a1a6-47c7-a229-1b777ae74d84",
-      "name": "Send an Email",
-      "webhookId": "27c65628-8bf7-4065-a989-f60e5e8e2740",
-      "credentials": {
-        "smtp": {
-          "id": "Ji39zur44sbZ8Pzb",
-          "name": "SMTP account"
-        }
-      }
+      "id": "c854e6bd-d572-40e1-b743-371c15084f84",
+      "name": "Priority = normal"
     }
   ],
   "pinData": {},
@@ -168,54 +220,72 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Data Validation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Data Validation": {
       "main": [
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "if isValid = true/false",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript1": {
+    "Data Enrichement": {
       "main": [
         [
           {
-            "node": "If",
+            "node": "if priority = high/normal",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If": {
+    "if priority = high/normal": {
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Priority = high",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Edit Fields1",
+            "node": "Priority = normal",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "if isValid = true/false": {
+      "main": [
+        [
+          {
+            "node": "Data Enrichement",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Missing Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Priority = high": {
       "main": [
         [
           {
@@ -226,7 +296,7 @@
         ]
       ]
     },
-    "Edit Fields1": {
+    "Priority = normal": {
       "main": [
         [
           {
@@ -243,11 +313,11 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "bf0cb592-0ad2-44c5-9ae9-e45692e75504",
+  "versionId": "2d813f5e-661c-4909-8f0e-7c2bde9aae57",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "967ce082f69aa18a4ad8197f67ea59942cf3d0543312cd4022947ee58f8af17a"
+    "instanceId": "44f70a61308bd96f9c291a83dcb15697fdfa90ff94471f1c6280ae3486c1c9bb"
   },
-  "id": "KbCdreL8riOIxRy1",
+  "id": "IUnAjJITOBikXNZ9",
   "tags": []
 }
