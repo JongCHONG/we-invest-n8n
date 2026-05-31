@@ -1,0 +1,253 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1384529b-ac7e-4d6b-a75c-3ba3ada570ff",
+      "name": "Webhook",
+      "webhookId": "f6fe83a9-1264-420d-af11-24d3e4daa000"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json.body ?? $json;\n\nconst required = ['firstName', 'email', 'projectType', 'city'];\nconst missing = required.filter((field) => !data[field] || String(data[field]).trim() === '');\n\nif (missing.length) {\n  throw new Error(`Champs obligatoires manquants: ${missing.join(', ')}`);\n}\n\nreturn {\n  json: data,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1a805506-db8a-4033-844c-1ceaeeff3895",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $json;\n\nconst leadId = `lead-${Date.now()}`;\nconst receivedAt = new Date().toISOString();\nconst priority = data.projectType === 'seller' ? 'high' : 'normal';\n\nconst summary = `${data.firstName} ${data.lastName || ''}`.trim()\n  + ` est un lead ${data.projectType} à ${data.city}`\n  + (data.budget ? ` avec un budget de ${data.budget}` : '');\n\nreturn {\n  json: {\n    ...data,\n    leadId,\n    receivedAt,\n    priority,\n    summary,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "290dc1e3-8eb9-4602-b240-b5c2b88ea43e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "91c70653-9565-4f8c-bab9-1ea728938b3f",
+              "leftValue": "={{$json.priority}}",
+              "rightValue": "high",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "2176acf7-2177-4958-b88d-8a2068e5f888",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c43c81e0-390a-4426-94af-98392eff3497",
+              "name": "status",
+              "value": "Lead prioritaire détecté",
+              "type": "string"
+            },
+            {
+              "id": "e1ba41b6-1958-4e1e-9fc9-adac354c7f54",
+              "name": "emailBody",
+              "value": "={{\n`<p><strong>Hello there!</strong></p>\n\n<p>Le flux n8n a bien été exécuté.</p>\n\n<p><strong>Résumé du lead reçu :</strong></p>\n\n<ul>\n  <li><strong>Nom :</strong> ${$json.firstName} ${$json.lastName || ''}</li>\n  <li><strong>Email :</strong> ${$json.email}</li>\n  <li><strong>Ville :</strong> ${$json.city}</li>\n  <li><strong>Type de projet :</strong> ${$json.projectType}</li>\n  <li><strong>Budget :</strong> ${$json.budget || ''}</li>\n  <li><strong>Priorité :</strong> ${$json.priority}</li>\n  <li><strong>Source :</strong> ${$json.source || ''}</li>\n  <li><strong>Date de réception :</strong> ${$json.receivedAt}</li>\n  <li><strong>ID du lead :</strong> ${$json.leadId}</li>\n</ul>\n\n<p><strong>Statut :</strong> Lead prioritaire détecté</p>\n\n<p>Ce message a été généré automatiquement depuis un workflow n8n exécuté en local.</p>`\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "1db992ee-5c77-4d7a-96e1-a95c61511e40",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "66c1fe84-eb2e-48ac-b185-5b815295e7fa",
+              "name": "status",
+              "value": "Lead standard détecté",
+              "type": "string"
+            },
+            {
+              "id": "a7b59ead-471c-4979-9ac0-f81862402cf4",
+              "name": "emailBody",
+              "value": "={{\n`<p><strong>Hello there!</strong></p>\n\n<p>Le flux n8n a bien été exécuté.</p>\n\n<p><strong>Résumé du lead reçu :</strong></p>\n\n<ul>\n  <li><strong>Nom :</strong> ${$json.firstName} ${$json.lastName || ''}</li>\n  <li><strong>Email :</strong> ${$json.email}</li>\n  <li><strong>Ville :</strong> ${$json.city}</li>\n  <li><strong>Type de projet :</strong> ${$json.projectType}</li>\n  <li><strong>Budget :</strong> ${$json.budget || ''}</li>\n  <li><strong>Priorité :</strong> ${$json.priority}</li>\n  <li><strong>Source :</strong> ${$json.source || ''}</li>\n  <li><strong>Date de réception :</strong> ${$json.receivedAt}</li>\n  <li><strong>ID du lead :</strong> ${$json.leadId}</li>\n</ul>\n\n<p><strong>Statut :</strong> Lead standard détecté</p>\n\n<p>Ce message a été généré automatiquement depuis un workflow n8n exécuté en local.</p>`\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        96
+      ],
+      "id": "0c521763-1721-4440-ad94-69dc7c9fa510",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "yonhoa27@gmail.com",
+        "toEmail": "jochong27@gmail.com",
+        "subject": "Hello there !",
+        "html": "={{$json.emailBody}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1056,
+        -32
+      ],
+      "id": "3b6afa79-a1a6-47c7-a229-1b777ae74d84",
+      "name": "Send an Email",
+      "webhookId": "27c65628-8bf7-4065-a989-f60e5e8e2740",
+      "credentials": {
+        "smtp": {
+          "id": "Ji39zur44sbZ8Pzb",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bf0cb592-0ad2-44c5-9ae9-e45692e75504",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "967ce082f69aa18a4ad8197f67ea59942cf3d0543312cd4022947ee58f8af17a"
+  },
+  "id": "KbCdreL8riOIxRy1",
+  "tags": []
+}
